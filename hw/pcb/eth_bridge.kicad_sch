@@ -2337,12 +2337,12 @@
   (junction (at 229.87 123.19) (diameter 1.016) (color 0 0 0 0))
   (junction (at 229.87 133.35) (diameter 1.016) (color 0 0 0 0))
 
-  (no_connect (at 118.11 135.255))
   (no_connect (at 118.11 114.935))
-  (no_connect (at 118.11 89.535))
-  (no_connect (at 118.11 69.215))
   (no_connect (at 59.69 29.845))
+  (no_connect (at 118.11 135.255))
   (no_connect (at 39.37 29.845))
+  (no_connect (at 118.11 69.215))
+  (no_connect (at 118.11 89.535))
 
   (wire (pts (xy 17.78 151.13) (xy 17.78 147.32))
     (stroke (width 0) (type solid) (color 0 0 0 0))
