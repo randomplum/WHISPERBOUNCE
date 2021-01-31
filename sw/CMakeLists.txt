@@ -3,7 +3,7 @@ set(CMAKE_COLOR_MAKEFILE on)
 set(CMAKE_ERROR_DEPRECATED on)
 
 cmake_minimum_required(VERSION 3.6.0)
-project("stm32f401" C ASM)
+
 
 set(TARGET ${CMAKE_PROJECT_NAME}.elf)
 
@@ -14,6 +14,47 @@ string(TOLOWER ${STM32_FAMILY} STM32_FAMILY_LC)
 set(MCU_LD_NAME "STM32F401CBUx")
 set(MCU_NAME "STM32F401xC")
 string(TOLOWER ${MCU_NAME} MCU_NAME_LC)
+
+set(CMAKE_SYSTEM_NAME               Generic)
+set(CMAKE_SYSTEM_PROCESSOR          arm)
+
+IF(NOT CROSS_COMPILE_PREFIX)
+    SET(CROSS_COMPILE_PREFIX "arm-none-eabi-")
+    MESSAGE(WARNING "No CROSS_COMPILE_PREFIX specified, using default: " ${CROSS_COMPILE_PREFIX})
+ENDIF()
+
+SET(CMAKE_C_COMPILER "${CROSS_COMPILE_PREFIX}gcc")
+set(CMAKE_ASM_COMPILER "${CROSS_COMPILE_PREFIX}gcc")
+SET(CMAKE_OBJCOPY "${CROSS_COMPILE_PREFIX}objcopy" CACHE INTERNAL "objcopy tool")
+SET(CMAKE_OBJDUMP "${CROSS_COMPILE_PREFIX}objdump" CACHE INTERNAL "objdump tool")
+SET(CMAKE_SIZE "${CROSS_COMPILE_PREFIX}size" CACHE INTERNAL "size tool")
+
+# Set a default build type if none was specified
+set(default_build_type "Release")
+
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+  message(WARNING "Setting build type to '${default_build_type}' as none was specified.")
+  set(CMAKE_BUILD_TYPE "${default_build_type}" CACHE
+      STRING "Choose the type of build." FORCE)
+  # Set the possible values of build type for cmake-gui
+  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS
+    "Debug" "Release")
+endif()
+
+SET(CMAKE_C_FLAGS " -march=armv7e-m -mthumb -fno-builtin -mcpu=cortex-m4 -mfloat-abi=soft -Wall -DNDEBUG -D${MCU_NAME} -std=gnu99 -ffunction-sections -fdata-sections -fomit-frame-pointer -mabi=aapcs -ffast-math -ftree-vectorize" CACHE INTERNAL "c compiler flags")
+SET(CMAKE_ASM_FLAGS " -march=armv7e-m -mthumb -mcpu=cortex-m4 -mfloat-abi=soft -Wa,--no-warn -Wall -DNDEBUG -D${MCU_NAME} -x assembler-with-cpp" CACHE INTERNAL "asm compiler flags")
+
+SET(CMAKE_EXE_LINKER_FLAGS "-Wl,--gc-sections -mthumb --specs=nano.specs --specs=nosys.specs -Wl,-Map,\"${TARGET}.map\"" CACHE INTERNAL "executable linker flags")
+
+SET(CMAKE_C_FLAGS_DEBUG "-Og -g" CACHE INTERNAL "c compiler flags debug")
+SET(CMAKE_ASM_FLAGS_DEBUG "-g" CACHE INTERNAL "asm compiler flags debug")
+SET(CMAKE_EXE_LINKER_FLAGS_DEBUG "" CACHE INTERNAL "linker flags debug")
+
+SET(CMAKE_C_FLAGS_RELEASE "-O2 -flto" CACHE INTERNAL "c compiler flags release")
+SET(CMAKE_ASM_FLAGS_RELEASE "" CACHE INTERNAL "asm compiler flags release")
+SET(CMAKE_EXE_LINKER_FLAGS_RELEASE "-flto" CACHE INTERNAL "linker flags release")
+
+project("stm32f401" C ASM)
 
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/${STM32CUBEDIR}/Drivers/CMSIS/Include
@@ -48,42 +89,6 @@ include(app/CMakeLists.txt)
 include(board/CMakeLists.txt)
 
 add_executable(${TARGET} ${SOURCES})
-
-# Set a default build type if none was specified
-set(default_build_type "Release")
-
-if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
-  message(WARNING "Setting build type to '${default_build_type}' as none was specified.")
-  set(CMAKE_BUILD_TYPE "${default_build_type}" CACHE
-      STRING "Choose the type of build." FORCE)
-  # Set the possible values of build type for cmake-gui
-  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS
-    "Debug" "Release")
-endif()
-
-SET(CMAKE_C_FLAGS "-mthumb -fno-builtin -mcpu=cortex-m0 -mfloat-abi=soft -Wall -DNDEBUG -D${MCU_NAME} -std=gnu99 -ffunction-sections -fdata-sections -fomit-frame-pointer -mabi=aapcs -ffast-math -ftree-vectorize" CACHE INTERNAL "c compiler flags")
-SET(CMAKE_ASM_FLAGS "-mthumb -mcpu=cortex-m0 -mfloat-abi=soft -Wa,--no-warn -Wall -DNDEBUG -D${MCU_NAME} -x assembler-with-cpp" CACHE INTERNAL "asm compiler flags")
-
-SET(CMAKE_EXE_LINKER_FLAGS "-Wl,--gc-sections -mthumb --specs=nano.specs --specs=nosys.specs -Wl,-Map,\"${TARGET}.map\"" CACHE INTERNAL "executable linker flags")
-
-IF(NOT CROSS_COMPILE_PREFIX)
-    SET(CROSS_COMPILE_PREFIX "arm-none-eabi-")
-    MESSAGE(WARNING "No CROSS_COMPILE_PREFIX specified, using default: " ${CROSS_COMPILE_PREFIX})
-ENDIF()
-
-SET(CMAKE_C_COMPILER "${CROSS_COMPILE_PREFIX}gcc")
-set(CMAKE_ASM_COMPILER "${CROSS_COMPILE_PREFIX}gcc")
-SET(CMAKE_OBJCOPY "${CROSS_COMPILE_PREFIX}objcopy" CACHE INTERNAL "objcopy tool")
-SET(CMAKE_OBJDUMP "${CROSS_COMPILE_PREFIX}objdump" CACHE INTERNAL "objdump tool")
-SET(CMAKE_SIZE "${CROSS_COMPILE_PREFIX}size" CACHE INTERNAL "size tool")
-
-SET(CMAKE_C_FLAGS_DEBUG "-Og -g" CACHE INTERNAL "c compiler flags debug")
-SET(CMAKE_ASM_FLAGS_DEBUG "-g" CACHE INTERNAL "asm compiler flags debug")
-SET(CMAKE_EXE_LINKER_FLAGS_DEBUG "" CACHE INTERNAL "linker flags debug")
-
-SET(CMAKE_C_FLAGS_RELEASE "-O2 -flto" CACHE INTERNAL "c compiler flags release")
-SET(CMAKE_ASM_FLAGS_RELEASE "" CACHE INTERNAL "asm compiler flags release")
-SET(CMAKE_EXE_LINKER_FLAGS_RELEASE "-flto" CACHE INTERNAL "linker flags release")
 
 CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/board/${MCU_LD_NAME}_FLASH.ld ${CMAKE_CURRENT_BINARY_DIR}/${TARGET}_flash.ld)
 
